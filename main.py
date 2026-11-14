@@ -29,7 +29,7 @@ app.add_middleware(
 
 # 3. Load the End-to-End mT5 Model (No DistilBART needed!)
 print("Loading Custom mT5 Model...")
-model_path = "./models/robust_hinglish_summarizer_70k"
+model_path = "./models/hinglish_summarizer_50k"
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
