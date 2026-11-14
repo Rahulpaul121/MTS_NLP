@@ -1,0 +1,11 @@
+# MTS_NLP — Hinglish AI Summarizer (FastAPI + Streamlit, model on Google Drive)
+fastapi
+uvicorn[standard]
+pydantic>=2
+torch
+transformers
+sentencepiece
+accelerate
+streamlit
+requests
+gdown
