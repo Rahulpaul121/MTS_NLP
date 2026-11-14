@@ -1,0 +1,4 @@
+# Streamlit frontend only (used by Render for the UI service).
+# No torch/transformers here — the model runs in the API service.
+streamlit
+requests

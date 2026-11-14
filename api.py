@@ -150,14 +150,24 @@ class Summarizer:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = None
         self.model = None
+        self.load_error: str | None = None
 
     def load(self) -> None:
-        model_dir = ensure_model()
-        logger.info("Loading mT5 model from %s on %s ...", model_dir, self.device)
-        self.tokenizer = AutoTokenizer.from_pretrained(str(model_dir))
-        self.model = AutoModelForSeq2SeqLM.from_pretrained(str(model_dir)).to(self.device)
-        self.model.eval()
-        logger.info("Model loaded.")
+        """Download (first run) + load the model. Runs in a background thread
+        at startup so the HTTP port opens immediately — hosts like Render
+        require the port to bind quickly, while the ~1.2 GB Drive download
+        takes minutes. /health reports progress; the summarize endpoint
+        returns 503 until loading finishes."""
+        try:
+            model_dir = ensure_model()
+            logger.info("Loading mT5 model from %s on %s ...", model_dir, self.device)
+            self.tokenizer = AutoTokenizer.from_pretrained(str(model_dir))
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(str(model_dir)).to(self.device)
+            self.model.eval()
+            logger.info("Model loaded.")
+        except Exception as e:  # keep the server up; surface the error via /health
+            self.load_error = str(e)
+            logger.error("Model failed to load: %s", e)
 
     @property
     def loaded(self) -> bool:
@@ -208,7 +218,9 @@ app.add_middleware(
 
 @app.on_event("startup")
 def _startup() -> None:
-    summarizer.load()
+    import threading
+
+    threading.Thread(target=summarizer.load, daemon=True).start()
 
 
 @app.get("/")
@@ -224,9 +236,16 @@ def root():
 
 @app.get("/health")
 def health():
+    if summarizer.loaded:
+        status = "ok"
+    elif summarizer.load_error:
+        status = "error"
+    else:
+        status = "loading"
     return {
-        "status": "ok" if summarizer.loaded else "loading",
+        "status": status,
         "model_loaded": summarizer.loaded,
+        "load_error": summarizer.load_error,
         "model_path": str(MODEL_PATH),
         "model_host": "google-drive",
         "device": str(summarizer.device),

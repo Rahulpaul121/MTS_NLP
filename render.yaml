@@ -1,0 +1,45 @@
+# Render Blueprint — MTS_NLP Hinglish Summarizer
+# Deploy: Render Dashboard -> New -> Blueprint -> pick this repo.
+# Creates TWO web services:
+#   1. mts-nlp-api        FastAPI backend (runs the mT5 model)
+#   2. mts-nlp-frontend   Streamlit UI (calls the API)
+#
+# BEFORE deploying, set DRIVE_FILE_ID on the API service (marked sync:false
+# below, so Render will ask for it): the file id of the shared model zip on
+# Google Drive. See README.md, "Step 1".
+#
+# RAM note: the API needs the Standard plan (2 GB). The model file alone is
+# ~1.2 GB — Free/Starter (512 MB) cannot hold it and the service will OOM.
+# The frontend is light and runs fine on Free (it spins down when idle).
+
+services:
+  - type: web
+    name: mts-nlp-api
+    runtime: python
+    plan: standard
+    buildCommand: pip install -r requirements-api.txt
+    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.1
+      - key: DRIVE_FILE_ID
+        sync: false        # <-- paste your Google Drive model-zip file id
+      - key: MODEL_PATH
+        value: ./models/hinglish_summarizer_50k
+      - key: ALLOWED_ORIGINS
+        value: "*"
+
+  - type: web
+    name: mts-nlp-frontend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements-frontend.txt
+    startCommand: streamlit run streamlit_app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.1
+      - key: API_URL
+        sync: false        # <-- after the API deploys, set this to its URL,
+                           #     e.g. https://mts-nlp-api.onrender.com
+                           #     then redeploy/restart this service.

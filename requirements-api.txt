@@ -1,0 +1,12 @@
+# FastAPI backend only (used by Render for the API service).
+# CPU-only torch wheel: much smaller/faster to build on Render than the
+# default CUDA wheel, and Render has no GPUs.
+--extra-index-url https://download.pytorch.org/whl/cpu
+fastapi
+uvicorn[standard]
+pydantic>=2
+torch
+transformers
+sentencepiece
+accelerate
+gdown
