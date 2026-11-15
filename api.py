@@ -55,7 +55,7 @@ MODEL_PATH = Path(os.environ.get("MODEL_PATH", "./models/hinglish_summarizer_50k
 DRIVE_FILE_ID = os.environ.get("DRIVE_FILE_ID", "").strip()
 DRIVE_FILE_URL = os.environ.get("DRIVE_FILE_URL", "").strip()
 MAX_INPUT_TOKENS = 256          # must match training / main.py
-MAX_NEW_TOKENS = 100
+MAX_NEW_TOKENS = 160  # raised from 100: error analysis (2026-11-15) showed 60% of reference summaries exceed 100 tokens (max 154), causing truncation
 
 _origins = os.environ.get("ALLOWED_ORIGINS", "*").strip()
 ALLOWED_ORIGINS = ["*"] if _origins == "*" else [o.strip() for o in _origins.split(",") if o.strip()]
