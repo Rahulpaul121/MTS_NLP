@@ -127,7 +127,7 @@ async def process_chat(request: TranslationRequest):
         with torch.no_grad():
             output_tokens = model.generate(
                 **inputs,
-                max_new_tokens=100,
+                max_new_tokens=160,
                 num_beams=4,
                 repetition_penalty=1.2,
                 early_stopping=True
